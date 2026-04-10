@@ -84,11 +84,11 @@ else
 fi
 
 if [[ -z "$HF_TOKEN" && -z "$_SMO" ]]; then
-    print ""
+    print -P ""
     print -P "  ${BLD}Why add a HuggingFace token?${RST}"
     print -P "  Faster downloads · higher rate limits · gated model access"
     print -P "  ${CYN}https://huggingface.co/settings/tokens${RST}"
-    print ""
+    print -P ""
     if [[ -t 0 ]]; then
         read -r "hf_yn?  Do you have a HuggingFace token to add? [y/N]: "
         if [[ "$hf_yn" =~ ^[Yy]$ ]]; then
@@ -102,7 +102,7 @@ if [[ -z "$HF_TOKEN" && -z "$_SMO" ]]; then
             fi
             # Save to ~/.zshrc if not already present (safe: no sed, just append)
             if ! grep -qF "export HF_TOKEN=" "${HOME}/.zshrc" 2>/dev/null; then
-                print "export HF_TOKEN=\"${HF_TOKEN}\"" >>"${HOME}/.zshrc"
+                print -P "export HF_TOKEN=\"${HF_TOKEN}\"" >>"${HOME}/.zshrc"
                 ok "HF_TOKEN saved to ~/.zshrc."
             fi
         else
@@ -134,12 +134,12 @@ else
 fi
 
 if [[ -z "$GITHUB_TOKEN" && -z "$_SMO" ]]; then
-    print ""
+    print -P ""
     print -P "  ${BLD}Why add a GitHub token?${RST}"
     print -P "  Higher API rate limits (5,000 vs 60) · access private repositories"
     print -P "  ${CYN}https://github.com/settings/tokens${RST} → Generate new token (classic)"
     print -P "  Required scopes: ${YLW}repo${RST}, ${YLW}read:org${RST} (optional)"
-    print ""
+    print -P ""
     if [[ -t 0 ]]; then
         read -r "gh_yn?  Do you have a GitHub token to add? [y/N]: "
         if [[ "$gh_yn" =~ ^[Yy]$ ]]; then
@@ -152,7 +152,7 @@ if [[ -z "$GITHUB_TOKEN" && -z "$_SMO" ]]; then
                 die "Invalid token format — must start with 'ghp_' and contain only safe characters."
             fi
             if ! grep -qF "export GITHUB_TOKEN=" "${HOME}/.zshrc" 2>/dev/null; then
-                print "export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"" >>"${HOME}/.zshrc"
+                print -P "export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"" >>"${HOME}/.zshrc"
                 ok "GITHUB_TOKEN saved to ~/.zshrc."
             fi
         else
@@ -166,7 +166,7 @@ fi
 # Configure git to use token via environment (git credential helper)
 if [[ -n "$GITHUB_TOKEN" ]]; then
     export GITHUB_TOKEN
-    if ! git config --global credential.helper '!f() { print "username=${GITHUB_TOKEN}"; print "password=x-oauth-basic"; }; f' 2>/dev/null; then
+    if ! git config --global credential.helper '!f() { print -P "username=${GITHUB_TOKEN}"; print -P "password=x-oauth-basic"; }; f' 2>/dev/null; then
         warn "Could not set git credential helper. GitHub operations may be unauthenticated."
     else
         ok "Git configured to use GitHub token via credential helper."
@@ -191,7 +191,7 @@ if [[ -z "$_SMO" ]]; then
     # Offer to set as default shell
     CURRENT_SHELL=$(getent passwd "$USER" | cut -d: -f7)
     if [[ "$CURRENT_SHELL" != "$(which zsh)" ]]; then
-        print ""
+        print -P ""
         print -P "  ${BLD}Zsh is not your default shell.${RST}"
         if [[ -t 0 ]]; then
             read -r "set_zsh_default?  Set Zsh as default shell? [y/N]: "
@@ -250,7 +250,7 @@ if [[ -z "$_SMO" ]]; then
 
     if ! grep -qF "$ZSHRC_MARKER" "${HOME}/.zshrc" 2>/dev/null; then
         # Ask user if they want to configure Zsh tools
-        print ""
+        print -P ""
         print -P "  ${BLD}Configure Zsh with modern tools?${RST}"
         print -P "  This will add syntax highlighting, autosuggestions, fzf, and Powerlevel10k to ~/.zshrc"
         if [[ -t 0 ]]; then
@@ -376,8 +376,8 @@ if command -v nvidia-smi &>/dev/null; then
         head -1 | grep -q ','; then
         GPU_LINE=$(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader \
             2>/dev/null | head -1)
-        GPU_NAME=$(print "$GPU_LINE" | cut -d',' -f1 | xargs)
-        VRAM_MiB=$(print "$GPU_LINE" | cut -d',' -f2 | awk '{print $1}')
+        GPU_NAME=$(print -P "$GPU_LINE" | cut -d',' -f1 | xargs)
+        VRAM_MiB=$(print -P "$GPU_LINE" | cut -d',' -f2 | awk '{print $1}')
         VRAM_GiB=$((VRAM_MiB / 1024))
         HAS_NVIDIA=true
         ok "GPU: ${GPU_NAME}  (${VRAM_GiB} GiB VRAM) — CUDA OK"
@@ -386,20 +386,20 @@ if command -v nvidia-smi &>/dev/null; then
     fi
 else
     GPU_NAME=$(lspci 2>/dev/null | grep -iE 'vga|3d|display' | head -1 |
-        sed 's/.*: //' || print "None")
+        sed 's/.*: //' || print -P "None")
     warn "nvidia-smi not found — CPU-only mode. GPU (lspci): ${GPU_NAME}"
 fi
 
-print -e "\n  ${BLD}Hardware${RST}"
-print -e "  RAM  : ${RAM_GiB} GiB   CPUs: ${CPUS}"
-print -e "  GPU  : ${GPU_NAME}   VRAM: ${VRAM_GiB} GiB   CUDA: ${HAS_NVIDIA}"
+print -P "\n  ${BLD}Hardware${RST}"
+print -P "  RAM  : ${RAM_GiB} GiB   CPUs: ${CPUS}"
+print -P "  GPU  : ${GPU_NAME}   VRAM: ${VRAM_GiB} GiB   CUDA: ${HAS_NVIDIA}"
 
 if [[ -z "$_SMO" && "$HAS_NVIDIA" != "true" ]]; then
     warn "No NVIDIA GPU — llama.cpp will be CPU-only (much slower)."
     if [[ -t 0 ]]; then
         read -r "cpu_ok?  Continue with CPU-only build? [y/N]: "
         if [[ ! "$cpu_ok" =~ ^[Yy]$ ]]; then
-            print "Aborted."
+            print -P "Aborted."
             exit 0
         fi
     else
@@ -462,52 +462,52 @@ grade_model() {
     local min_ram="${1:?}" min_vram="${2:?}"
     local ram_gib="${3:?}" vram_gib="${4:?}" has_nvidia="${5:?}"
     if [[ ! "$min_ram" =~ ^[0-9]+$ || ! "$min_vram" =~ ^[0-9]+$ ]]; then
-        print "F"
+        print -P "F"
         return 1
     fi
     local ram_h=$((ram_gib - min_ram))
     if ((min_vram > 0)) && [[ "$has_nvidia" == "true" ]]; then
         local vram_h=$((vram_gib - min_vram))
         if ((vram_h >= 4)); then
-            print "S"
+            print -P "S"
         elif ((vram_h >= 0)); then
-            print "A"
+            print -P "A"
         elif ((ram_h >= 4)); then
-            print "B"
+            print -P "B"
         elif ((ram_h >= 0)); then
-            print "C"
+            print -P "C"
         else
-            print "F"
+            print -P "F"
         fi
     elif ((min_vram > 0)); then
         if ((ram_h >= 8)); then
-            print "B"
+            print -P "B"
         elif ((ram_h >= 0)); then
-            print "C"
+            print -P "C"
         else
-            print "F"
+            print -P "F"
         fi
     else
         if ((ram_h >= 8)); then
-            print "S"
+            print -P "S"
         elif ((ram_h >= 4)); then
-            print "A"
+            print -P "A"
         elif ((ram_h >= 0)); then
-            print "B"
+            print -P "B"
         else
-            print "F"
+            print -P "F"
         fi
     fi
 }
 
 grade_label() {
     case "$1" in
-    S) print "S  Runs great " ;;
-    A) print "A  Runs well  " ;;
-    B) print "B  Decent     " ;;
-    C) print "C  Tight fit  " ;;
-    F) print "F  Too heavy  " ;;
-    *) print "?  Unknown    " ;;
+    S) print -P "S  Runs great " ;;
+    A) print -P "A  Runs well  " ;;
+    B) print -P "B  Decent     " ;;
+    C) print -P "C  Tight fit  " ;;
+    F) print -P "F  Too heavy  " ;;
+    *) print -P "?  Unknown    " ;;
     esac
 }
 
@@ -556,8 +556,8 @@ HDR
     print -P "${RST}"
     printf "  GPU: %-28s  RAM: %s GiB   VRAM: %s GiB   CUDA: %s\n\n" \
         "${GPU_NAME:0:28}" "$RAM_GiB" "$VRAM_GiB" "$HAS_NVIDIA"
-    print -e "  ${BLD} #   Model                    Size    Ctx     Grade              Tags${RST}"
-    print "  ─────────────────────────────────────────────────────────────────────────────"
+    print -P "  ${BLD} #   Model                    Size    Ctx     Grade              Tags${RST}"
+    print -P "  ─────────────────────────────────────────────────────────────────────────────"
 
     local last_tier="" idx
     for idx in ${(k)MODELS}; do
@@ -575,10 +575,10 @@ HDR
         gguf_file="${gguf_file// /}"
         if [[ "$tier" != "$last_tier" ]]; then
             case "$tier" in
-            tiny) print -e "\n  ${BLD}▸ TINY   (< 1 GB · instant · edge/test)${RST}" ;;
-            small) print -e "\n  ${BLD}▸ SMALL  (1–2 GB · fast CPU · everyday use)${RST}" ;;
-            mid) print -e "\n  ${BLD}▸ MID    (4–17 GB · quality/speed balance)${RST}" ;;
-            large) print -e "\n  ${BLD}▸ LARGE  (15 GB+ · high-end GPU or lots of RAM)${RST}" ;;
+            tiny) print -P "\n  ${BLD}▸ TINY   (< 1 GB · instant · edge/test)${RST}" ;;
+            small) print -P "\n  ${BLD}▸ SMALL  (1–2 GB · fast CPU · everyday use)${RST}" ;;
+            mid) print -P "\n  ${BLD}▸ MID    (4–17 GB · quality/speed balance)${RST}" ;;
+            large) print -P "\n  ${BLD}▸ LARGE  (15 GB+ · high-end GPU or lots of RAM)${RST}" ;;
             esac
             last_tier="$tier"
         fi
@@ -592,7 +592,7 @@ HDR
             cached=""
         fi
         tag_display="${tags//,/ }"
-        print -e "  ${BLD}$(printf '%2s' "$idx")${RST}  $(printf '%-26s' "$dname")" \
+        print -P "  ${BLD}$(printf '%2s' "$idx")${RST}  $(printf '%-26s' "$dname")" \
             " $(printf '%5s' "$size_gb") GB  $(printf '%-7s' "$ctx")" \
             "  ${GC}$(printf '%-13s' "$GL")${RST}  $(printf '%-24s' "$tag_display") $cached"
     done
@@ -611,7 +611,7 @@ HDR
         if [[ -z "${catalogued[$fname]:-}" ]]; then
             extra_count=$((extra_count + 1))
             if ((extra_count == 1)); then
-                print -e "\n  ${BLD}▸ LOCAL  (in ~/llm-models, not in catalogue)${RST}"
+                print -P "\n  ${BLD}▸ LOCAL  (in ~/llm-models, not in catalogue)${RST}"
             fi
             local sz_bytes sz
             sz_bytes=$(wc -c <"$f" 2>/dev/null || print 0)
@@ -624,27 +624,27 @@ HDR
             else
                 sz="${sz_bytes}B"
             fi
-            print -e "  ${CYN}↓${RST}  ${fname}  (${sz})"
+            print -P "  ${CYN}↓${RST}  ${fname}  (${sz})"
         fi
     done
 
-    print ""
-    print "  ─────────────────────────────────────────────────────────────────────────────"
-    print -e "  ${GRN}S/A${RST} Runs great/well   ${YLW}B/C${RST} Tight fit   ${RED}F${RST} Too heavy   ${CYN}↓${RST} Already on disk"
-    print ""
-    print -e "  ${YLW}Tip:${RST} Model 5 (Qwen3.5-9B) = general · Model 6 (Carnice-9b) = Hermes-tuned"
-    print -e "  Enter a number, or ${BLD}u${RST} to download via HuggingFace URL."
-    print ""
+    print -P ""
+    print -P "  ─────────────────────────────────────────────────────────────────────────────"
+    print -P "  ${GRN}S/A${RST} Runs great/well   ${YLW}B/C${RST} Tight fit   ${RED}F${RST} Too heavy   ${CYN}↓${RST} Already on disk"
+    print -P ""
+    print -P "  ${YLW}Tip:${RST} Model 5 (Qwen3.5-9B) = general · Model 6 (Carnice-9b) = Hermes-tuned"
+    print -P "  Enter a number, or ${BLD}u${RST} to download via HuggingFace URL."
+    print -P ""
 }
 
 # ── HF URL / repo download ─────────────────────────────────────────────────────
 download_from_hf_url() {
-    print ""
+    print -P ""
     print -P "  ${BLD}Download via HuggingFace${RST}"
     print -P "  Accepted:"
     print -P "    https://huggingface.co/owner/repo/resolve/main/file.gguf"
     print -P "    owner/repo-name  (lists files, you pick)"
-    print ""
+    print -P ""
     read -r "HF_INPUT?  Paste URL or repo (owner/name): "
     HF_INPUT="${HF_INPUT//[[:space:]]/}"
     [[ -z "$HF_INPUT" ]] && die "No input provided."
@@ -702,14 +702,14 @@ PYLIST
                 SEL_GGUF="${GGUF_FILES[0]}"
                 ok "Only one GGUF found: ${SEL_GGUF}"
             else
-                print ""
+                print -P ""
                 print -P "  ${BLD}Available GGUFs:${RST}"
                 local fnum=1 gf
                 for gf in "${GGUF_FILES[@]}"; do
                     printf "  %2d  %s\n" "$fnum" "$gf"
                     fnum=$((fnum + 1))
                 done
-                print ""
+                print -P ""
                 local gf_choice
                 while true; do
                     read -r "gf_choice?  Enter number [1-${#GGUF_FILES[@]}]: "
@@ -746,8 +746,8 @@ while true; do
         CHOICE="5"
         break
     fi
-    read -r "CHOICE?$(print -e "  ${BLD}Enter number [1-${NUM_MODELS}] or 'u' for URL:${RST} ")" || {
-        print ""
+    read -r "CHOICE?$(print -P "  ${BLD}Enter number [1-${NUM_MODELS}] or 'u' for URL:${RST} ")" || {
+        print -P ""
         warn "EOF detected. Exiting."
         exit 0
     }
@@ -785,7 +785,7 @@ if [[ "$CHOICE" != "u" && "$CHOICE" != "U" ]]; then
         if [[ -t 0 ]]; then
             read -r "go_anyway?  Continue anyway? [y/N]: "
             if [[ ! "$go_anyway" =~ ^[Yy]$ ]]; then
-                print "Aborted."
+                print -P "Aborted."
                 exit 0
             fi
         else
@@ -855,8 +855,8 @@ git_has_updates() {
     fi
     git -C "$repo_dir" fetch origin "$branch" 2>/dev/null || true
     local local_commit remote_commit
-    local_commit=$(git -C "$repo_dir" rev-parse HEAD 2>/dev/null || print "")
-    remote_commit=$(git -C "$repo_dir" rev-parse "origin/$branch" 2>/dev/null || print "")
+    local_commit=$(git -C "$repo_dir" rev-parse HEAD 2>/dev/null || print -P "")
+    remote_commit=$(git -C "$repo_dir" rev-parse "origin/$branch" 2>/dev/null || print -P "")
     [[ -n "$local_commit" && -n "$remote_commit" && "$local_commit" != "$remote_commit" ]]
 }
 
@@ -870,8 +870,8 @@ find_llama_server() {
         "${HOME}/llama.cpp/build/bin/llama-server"; do
         if [[ -x "$p" ]]; then
             vo=$("$p" --version 2>&1) || continue
-            if print "$vo" | grep -qiE 'llama|ggml'; then
-                print "$p"
+            if print -P "$vo" | grep -qiE 'llama|ggml'; then
+                print -P "$p"
                 return 0
             fi
         fi
@@ -881,8 +881,8 @@ find_llama_server() {
     found=( ${HOME}/llama.cpp/**/llama-server(-*N) )[1]
     if [[ -n "$found" ]]; then
         vo=$("$found" --version 2>&1) || true
-        if print "$vo" | grep -qiE 'llama|ggml'; then
-            print "$found"
+        if print -P "$vo" | grep -qiE 'llama|ggml'; then
+            print -P "$found"
             return 0
         fi
     fi
@@ -1069,7 +1069,7 @@ select_optional_components() {
 
     # whiptail returns non-zero on cancel
     if [[ $? -ne 0 ]]; then
-        print ""
+        print -P ""
         ok "No optional components selected."
         return 1
     fi
@@ -1094,13 +1094,13 @@ select_optional_components() {
         esac
     done
 
-    print ""
+    print -P ""
     local count=0
-    $INSTALL_GOOSE && { print "  ✓ Goose"; count=$((count+1)); }
-    $INSTALL_OPENCODE && { print "  ✓ OpenCode"; count=$((count+1)); }
-    $INSTALL_AUTOAGENT && { print "  ✓ AutoAgent"; count=$((count+1)); }
-    $INSTALL_OPENCLAUDE && { print "  ✓ OpenClaude"; count=$((count+1)); }
-    $INSTALL_WEBUI && { print "  ✓ Hermes WebUI"; count=$((count+1)); }
+    $INSTALL_GOOSE && { print -P "  ✓ Goose"; count=$((count+1)); }
+    $INSTALL_OPENCODE && { print -P "  ✓ OpenCode"; count=$((count+1)); }
+    $INSTALL_AUTOAGENT && { print -P "  ✓ AutoAgent"; count=$((count+1)); }
+    $INSTALL_OPENCLAUDE && { print -P "  ✓ OpenClaude"; count=$((count+1)); }
+    $INSTALL_WEBUI && { print -P "  ✓ Hermes WebUI"; count=$((count+1)); }
 
     if [[ $count -eq 0 ]]; then
         ok "No optional components selected."
@@ -1122,7 +1122,7 @@ if [[ -z "$_SMO" ]]; then
     step "Optional components selection"
     if ! select_optional_components; then
         # Fallback to individual prompts if whiptail missing or user cancelled
-        print ""
+        print -P ""
         print -P "  ${BLD}Optional: Goose AI Agent (block/goose)${RST}"
         read -r "ans?  Install Goose? [y/N]: " && [[ "$ans" =~ ^[Yy]$ ]] && INSTALL_GOOSE=true
         print -P "  ${BLD}Optional: OpenCode (anomalyco/opencode)${RST}"
@@ -1273,7 +1273,7 @@ if $INSTALL_AUTOAGENT; then
 AUTOAGENT_VENV="${AUTOAGENT_VENV}"
 AUTOAGENT_DIR="${AUTOAGENT_DIR}"
 if ! curl -sf http://localhost:8080/v1/models &>/dev/null; then
-    print "llama-server not running. Start with: start-llm"
+    print -P "llama-server not running. Start with: start-llm"
     exit 1
 fi
 source "\${AUTOAGENT_VENV}/bin/activate"
@@ -1351,7 +1351,7 @@ cd "${HERMES_WEBUI_DIR}"
 if [[ -x "${HERMES_VENV}/bin/python" ]]; then
     export PATH="${HERMES_VENV}/bin:\${PATH}"
 fi
-print "Starting Hermes WebUI on http://localhost:8787"
+print -P "Starting Hermes WebUI on http://localhost:8787"
 ./start.sh
 WEBUISTART
     chmod +x "${HOME}/start-webui.sh"
@@ -1509,7 +1509,7 @@ SERVICE
     if systemctl --user daemon-reload 2>/dev/null; then
         systemctl --user enable llama-server.service 2>/dev/null || true
         ok "llama-server systemd service enabled."
-        print "  Persistent auto-start: sudo loginctl enable-linger $USER"
+        print -P "  Persistent auto-start: sudo loginctl enable-linger $USER"
     else
         warn "systemd --user unavailable — use 'start-llm' to start manually."
     fi
@@ -1575,14 +1575,14 @@ fi
 # =============================================================================
 if [[ -z "$_SMO" ]]; then
     step "Adding helpers to ~/.zshrc..."
-    SCRIPT_SELF="$(readlink -f "${(%):-%N}" 2>/dev/null || realpath "$0" 2>/dev/null || print "")"
+    SCRIPT_SELF="$(readlink -f "${(%):-%N}" 2>/dev/null || realpath "$0" 2>/dev/null || print -P "")"
     INSTALL_COPY="${HOME}/.local/bin/install-llm.sh"
     if [[ "$SCRIPT_SELF" == "/dev/stdin" || -z "$SCRIPT_SELF" || "$SCRIPT_SELF" == "/proc/"* ]]; then
         warn "Script run via pipe — copying to ${INSTALL_COPY} for switch-model."
         mkdir -p "${HOME}/.local/bin"
         cat >"$INSTALL_COPY" <<'STUB'
 #!/usr/bin/env bash
-print "Re-running install from GitHub..."
+print -P "Re-running install from GitHub..."
 curl -fsSL https://raw.githubusercontent.com/mettbrot0815/llm-installer/refs/heads/main/install.zsh | zsh
 STUB
         chmod +x "$INSTALL_COPY"
@@ -1609,20 +1609,20 @@ export PATH="/usr/local/cuda/bin:\${HOME}/.local/bin:\${PATH}"
 export LD_LIBRARY_PATH="/usr/local/cuda/lib64:\${LD_LIBRARY_PATH:-}"
 
 alias start-llm='bash ~/start-llm.sh'
-alias stop-llm='pkill -f "llama-server.*-m" 2>/dev/null || true; print "llama-server stopped."'
+alias stop-llm='pkill -f "llama-server.*-m" 2>/dev/null || true; print -P "llama-server stopped."'
 alias restart-llm='stop-llm; sleep 2; start-llm'
 alias llm-log='tail -f /tmp/llama-server.log'
 alias switch-model='SWITCH_MODEL_ONLY=1 zsh ${INSTALL_COPY}'
 ZSHRC_EXPANDED
 
-        [[ -n "${HF_TOKEN:-}" ]] && ! grep -qF "export HF_TOKEN=" "${HOME}/.zshrc" && print "export HF_TOKEN=\"${HF_TOKEN}\"" >>"${HOME}/.zshrc"
-        [[ -n "${GITHUB_TOKEN:-}" ]] && ! grep -qF "export GITHUB_TOKEN=" "${HOME}/.zshrc" && print "export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"" >>"${HOME}/.zshrc"
+        [[ -n "${HF_TOKEN:-}" ]] && ! grep -qF "export HF_TOKEN=" "${HOME}/.zshrc" && print -P "export HF_TOKEN=\"${HF_TOKEN}\"" >>"${HOME}/.zshrc"
+        [[ -n "${GITHUB_TOKEN:-}" ]] && ! grep -qF "export GITHUB_TOKEN=" "${HOME}/.zshrc" && print -P "export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"" >>"${HOME}/.zshrc"
 
         cat >>"${HOME}/.zshrc" <<'ZSH_FUNCTIONS'
 
 vram() {
     nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null | \
-        awk -F, '{printf "GPU: %s\nVRAM: %s / %s MiB\nUtil: %s%%\n",$1,$2,$3,$4}' || print "nvidia-smi not available"
+        awk -F, '{printf "GPU: %s\nVRAM: %s / %s MiB\nUtil: %s%%\n",$1,$2,$3,$4}' || print -P "nvidia-smi not available"
 }
 
 llm-models() {
@@ -1630,17 +1630,17 @@ llm-models() {
     [[ -f ~/start-llm.sh ]] && active_model=$(grep '^GGUF=' ~/start-llm.sh 2>/dev/null | head -1 | sed 's/GGUF="//;s/".*//' | xargs basename 2>/dev/null || true)
     print -P "${BLD}${CYN}╭────────────────────────────────────────────────────────────────╮${RST}"
     print -P "${BLD}${CYN}│${RST}  ${BLD}Models in ~/llm-models${RST}"
-    print "  ────────────────────────────────────────────────────────"
+    print -P "  ────────────────────────────────────────────────────────"
     local found=0 f sz name tag
     for f in ~/llm-models/*.gguf; do
         [[ -f "$f" ]] || continue
         found=$(( found + 1 ))
         sz=$(du -h "$f" | cut -f1); name=$(basename "$f"); tag=""
         [[ "$name" == "$active_model" ]] && tag=" ${GRN}← active${RST}"
-        print -e "  ${sz}  ${name}${tag}"
+        print -P "  ${sz}  ${name}${tag}"
     done
-    [[ $found -eq 0 ]] && print "  (no .gguf files found)"
-    print ""
+    [[ $found -eq 0 ]] && print -P "  (no .gguf files found)"
+    print -P ""
 }
 
 llm-status() {
@@ -1681,7 +1681,7 @@ show_llm_summary() {
     print -P "${BLD}${CYN}│${RST}  ──────────────────────────────────────────────────────"
     print -P "${BLD}${CYN}│${RST}  ${CYN}http://localhost:8080${RST}  → llama-server + Web UI"
     print -P "${BLD}${CYN}╰────────────────────────────────────────────────────────────────╯${RST}"
-    print ""
+    print -P ""
 }
 
 if [[ -o interactive ]]; then
@@ -1693,7 +1693,7 @@ _llm_autostart() {
     pgrep -f "llama-server.*-m" &>/dev/null && return 0
     [[ -f ~/start-llm.sh ]] || return 0
     local uptime_min
-    uptime_min=$(awk '{print int($1/60)}' /proc/uptime 2>/dev/null || print "0")
+    uptime_min=$(awk '{print int($1/60)}' /proc/uptime 2>/dev/null || print -P "0")
     local session_marker="/tmp/.llm_autostarted_${uptime_min}"
     if mkdir "${session_marker}.lock" 2>/dev/null; then
         print -P "${YLW}[LLM] llama-server not running — auto-starting...${RST}"
@@ -1719,7 +1719,7 @@ fi
 if [[ -z "$_SMO" ]]; then
     # Portability: Check for WSL by testing cmd.exe availability
     if command -v cmd.exe &>/dev/null; then
-        WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n' || print "")
+        WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n' || print -P "")
     else
         WIN_USER=""
         warn "cmd.exe not found — not running in WSL, skipping .wslconfig."
@@ -1802,7 +1802,7 @@ fi
 # =============================================================================
 #  Done — Summary
 # =============================================================================
-print ""
+print -P ""
 print -P "${GRN}${BLD}"
 if [[ -n "$_SMO" ]]; then
     cat <<'EOF'
@@ -1822,7 +1822,7 @@ print -P "${RST}"
 print -P " ${BLD}Active model:${RST}  ${SEL_NAME}"
 print -P "               ${SEL_GGUF}"
 print -P " ${BLD}Context:${RST}       ${SAFE_CTX} tokens   ${BLD}Jinja:${RST} ${USE_JINJA}"
-print ""
+print -P ""
 
 if [[ -z "$_SMO" ]]; then
     print -P " ${BLD}Installed:${RST}"
@@ -1833,11 +1833,11 @@ if [[ -z "$_SMO" ]]; then
     $INSTALL_AUTOAGENT && print -P "  AutoAgent     →  autoagent"
     $INSTALL_OPENCLAUDE && print -P "  OpenClaude    →  openclaude"
     $INSTALL_WEBUI && print -P "  Hermes WebUI  →  start-webui  (http://localhost:8787)"
-    print ""
+    print -P ""
 fi
 
 print -P " ${BLD}════ Quick Reference ════${RST}"
-print ""
+print -P ""
 
 print -P " ${BLD}Server:${RST}"
 print -P "  ${CYN}start-llm${RST}       Start llama-server"
@@ -1848,7 +1848,7 @@ print -P "  ${CYN}llm-status${RST}      Status + active model"
 print -P "  ${CYN}llm-log${RST}         Tail llama-server log"
 print -P "  ${CYN}llm-models${RST}      List all .gguf files"
 print -P "  ${CYN}vram${RST}            GPU/VRAM usage"
-print ""
+print -P ""
 
 print -P " ${BLD}Agents:${RST}"
 print -P "  ${CYN}hermes${RST}          Hermes Agent"
@@ -1857,12 +1857,12 @@ $INSTALL_OPENCODE && print -P "  ${CYN}opencode${RST} / ${CYN}oc${RST}  OpenCode
 $INSTALL_AUTOAGENT && print -P "  ${CYN}autoagent${RST}       AutoAgent"
 $INSTALL_OPENCLAUDE && print -P "  ${CYN}openclaude${RST}      OpenClaude"
 $INSTALL_WEBUI && print -P "  ${CYN}start-webui${RST}     Hermes WebUI"
-print ""
+print -P ""
 
 print -P " ${YLW}Note:${RST}       source ~/.zshrc or open a new terminal."
 print -P " ${YLW}Auto-start:${RST} llama-server starts automatically on new terminal."
 print -P " ${GRN}Persistent:${RST} sudo loginctl enable-linger $USER"
-print ""
+print -P ""
 
 exit 0
 
@@ -1933,8 +1933,8 @@ fi
 
 grade_color() {
     case "$1" in
-    S | A) print "${GRN}" ;;
-    B | C) print "${YLW}" ;;
-    *) print "${RED}" ;;
+    S | A) print -P "${GRN}" ;;
+    B | C) print -P "${YLW}" ;;
+    *) print -P "${RED}" ;;
     esac
 }
