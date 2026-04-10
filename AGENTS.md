@@ -64,7 +64,42 @@ Always keep in mind the user's goal: **Maintain and improve the LLM installer sc
 - Only add high-confidence learnings. Keep the file under 250 lines total.
 - Structure new learnings like this:
 
-**Learned [Date]:**
-- Rule: ...
-- Example: ...
-- Why: ...
+**Learned [2026-04-10]:**
+- Rule: When rewriting Bash scripts to Zsh, use emulate -L zsh -o extendedglob -o errreturn -o pipefail -o no_unset to ensure predictable Zsh environment.
+- Example: In install.zsh, started with emulate -L zsh ... and used path=( ${path:#/mnt/*} ) instead of IFS loop.
+- Why: Ensures idiomatic Zsh code and avoids Bashisms for better performance and maintainability.
+
+**Learned [2026-04-10]:**
+- Rule: Use typeset -A for associative arrays in Zsh instead of Bash arrays for structured data like model catalogues.
+- Example: typeset -A MODELS; MODELS=( 1 "data..." ) and accessed with $MODELS[$idx]
+- Why: Zsh associative arrays are more powerful and allow key-based access without indexing gymnastics.
+
+**Learned [2026-04-10]:**
+- Rule: Replace envsubst with print -r ${(e)template_content} for safe variable expansion in Zsh.
+- Example: template_content=$(<file); print -r ${(e)template_content} > output
+- Why: Avoids dependency on gettext-base and uses native Zsh parameter expansion for security.
+
+**Learned [2026-04-10]:**
+- Rule: Use print -P for colored output in Zsh instead of echo with raw escapes.
+- Example: print -P "${CYN}[*] message${RST}"
+- Why: Reliable formatting and leverages Zsh's prompt expansion for better color handling.
+
+**Learned [2026-04-10]:**
+- Rule: For whiptail output parsing, use local -a selected=( ${(Q)${(z)choices}} ) to robustly split quoted strings.
+- Example: In select_optional_components, parsed choices with Zsh array expansion.
+- Why: Handles quoted output safely without IFS manipulation, reducing injection risks.
+
+**Learned [2026-04-10]:**
+- Rule: Use Zsh glob qualifiers like **/file(-*N) for efficient file finding without forking find.
+- Example: found=( ${HOME}/llama.cpp/**/llama-server(-*N) )[1] in find_llama_server.
+- Why: Leverages Zsh's built-in globbing for faster, more reliable file searches.
+
+**Learned [2026-04-10]:**
+- Rule: Always install Zsh tools (zsh-syntax-highlighting, autosuggestions, fzf, Powerlevel10k) and configure .zshrc safely with markers.
+- Example: Cloned tools to ~/.zsh/plugins/, added config block with # >>> ... <<< markers, checked for existing before appending.
+- Why: Provides modern, productive shell experience and respects user configurations.
+
+**Learned [2026-04-10]:**
+- Rule: Adapt .bashrc helpers to .zshrc for Zsh, using Zsh-specific features like [[ -o interactive ]] and print -P.
+- Example: Converted functions to use Zsh syntax, added Zsh aliases and auto-start logic.
+- Why: Ensures seamless integration and leverages Zsh strengths for better user experience.
