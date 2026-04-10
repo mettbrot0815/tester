@@ -4,6 +4,7 @@
 #  Version: production-hardened (final) – SECURITY & ROBUSTNESS FIXES (Zsh rewrite)
 #  Optional components selected via single multi‑select menu (whiptail).
 # =============================================================================
+# Set Zsh emulation mode: -L local scope, extended globbing, errreturn on errors, pipefail on pipes, no_unset on unset vars
 emulate -L zsh -o extendedglob -o errreturn -o pipefail -o no_unset
 
 # ── SWITCH_MODEL_ONLY sentinel ─────────────────────────────────────────────────
@@ -93,10 +94,11 @@ if [[ -z "$HF_TOKEN" && -z "$_SMO" ]]; then
         if [[ "$hf_yn" =~ ^[Yy]$ ]]; then
             read -r "HF_TOKEN?  Paste your token (starts with hf_): "
             HF_TOKEN="${HF_TOKEN//[[:space:]]/}"
-            if [[ "$HF_TOKEN" =~ ^hf_ ]]; then
+            # Security: Validate HF_TOKEN format to prevent injection (only allow hf_ prefix and alphanumerics)
+            if [[ "$HF_TOKEN" =~ ^hf_[a-zA-Z0-9_-]+$ ]]; then
                 ok "Token accepted."
             else
-                warn "Token doesn't start with 'hf_' — using anyway."
+                die "Invalid token format — must start with 'hf_' and contain only safe characters."
             fi
             # Save to ~/.zshrc if not already present (safe: no sed, just append)
             if ! grep -qF "export HF_TOKEN=" "${HOME}/.zshrc" 2>/dev/null; then
@@ -143,10 +145,11 @@ if [[ -z "$GITHUB_TOKEN" && -z "$_SMO" ]]; then
         if [[ "$gh_yn" =~ ^[Yy]$ ]]; then
             read -r "GITHUB_TOKEN?  Paste your token (starts with ghp_): "
             GITHUB_TOKEN="${GITHUB_TOKEN//[[:space:]]/}"
-            if [[ "$GITHUB_TOKEN" =~ ^ghp_ ]]; then
+            # Security: Validate GITHUB_TOKEN format to prevent injection
+            if [[ "$GITHUB_TOKEN" =~ ^ghp_[a-zA-Z0-9_-]+$ ]]; then
                 ok "Token accepted."
             else
-                warn "Token doesn't start with 'ghp_' — using anyway."
+                die "Invalid token format — must start with 'ghp_' and contain only safe characters."
             fi
             if ! grep -qF "export GITHUB_TOKEN=" "${HOME}/.zshrc" 2>/dev/null; then
                 print "export GITHUB_TOKEN=\"${GITHUB_TOKEN}\"" >>"${HOME}/.zshrc"
@@ -540,6 +543,8 @@ apply_model_settings() {
 }
 
 # ── Draw model table ───────────────────────────────────────────────────────────
+# Complex function (~100 lines): Handles model display with grading, caching, and tier grouping.
+# Maintainability: Could split into sub-functions (e.g., grade_and_display), but kept intact for now.
 show_model_table() {
     /usr/bin/clear 2>/dev/null || true
     print -P "${BLD}${CYN}"
@@ -1712,7 +1717,13 @@ fi
 #  15. .wslconfig RAM hint  [SKIPPED by switch-model]
 # =============================================================================
 if [[ -z "$_SMO" ]]; then
-    WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n' || print "")
+    # Portability: Check for WSL by testing cmd.exe availability
+    if command -v cmd.exe &>/dev/null; then
+        WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n' || print "")
+    else
+        WIN_USER=""
+        warn "cmd.exe not found — not running in WSL, skipping .wslconfig."
+    fi
     WSLCONFIG=""
     WSLCONFIG_DIR=""
     if [[ -n "$WIN_USER" ]]; then
